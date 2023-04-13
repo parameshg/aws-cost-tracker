@@ -34,7 +34,7 @@ variable "SENTRY_ENDPOINT" {
 variable "HTTP_TIMEOUT" {
   type        = number
   description = "Lambda Timeout"
-  default     = 10
+  default     = 15
 }
 
 variable "PUSHOVER_USER" {
@@ -115,10 +115,4 @@ resource "aws_lambda_function" "aws-cost-tracker" {
     project      = "aws-cost-tracker"
     url          = "https://github.com/parameshg/aws-cost-tracker"
   }
-}
-
-data "archive_file" "lambda" {
-  type        = "zip"
-  source_file = "lambda.js"
-  output_path = "lambda_function_payload.zip"
 }

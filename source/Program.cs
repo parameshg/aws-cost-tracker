@@ -24,30 +24,26 @@ namespace CostTracker
             {
                 var transaction = SentrySdk.StartTransaction("invocation", "execute");
 
-                (double usage, double forecast) = Calculate(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"), Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY"));
+                (string usage, string forecast) = Calculate(transaction);
 
-                var used = $"{usage.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}";
-
-                var forecasted = $"{forecast.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))}";
-
-                Publish($"AWS usage is {used} USD and projected to be {forecasted} USD by the end of the month.");
+                Publish($"Current AWS usage is {usage} and projected to be {forecast} by the end of the month.", transaction);
 
                 transaction.Finish();
             }
         }
 
-        private (double usage, double forecast) Calculate(string? username, string? password, ITransaction? transaction = null)
+        private (string usage, string forecast) Calculate(ITransaction? transaction = null)
         {
-            var result = (0.0, 0.0);
+            var result = ("", "");
+
+            var exchange_currency = "AUD";
+
+            var exchange_rate = 1.49;
 
             var span = transaction?.StartChild("calculate");
 
-            var region = RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("AWS_REGION"));
-
-            if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+            using (var api = new AmazonCostExplorerClient())
             {
-                var api = new AmazonCostExplorerClient(username, password, region);
-
                 var usage = api.GetCostAndUsageAsync(new GetCostAndUsageRequest
                 {
                     Granularity = Granularity.MONTHLY,
@@ -70,7 +66,8 @@ namespace CostTracker
                     }
                 }).GetAwaiter().GetResult();
 
-                result = (double.Parse(usage.ResultsByTime.Last().Total.Last().Value.Amount), double.Parse(forecast.Total.Amount));
+                result = ($"{(double.Parse(usage.ResultsByTime.Last().Total.Last().Value.Amount) * exchange_rate).ToString("C", CultureInfo.CreateSpecificCulture("en-US"))} {exchange_currency}", 
+                          $"{(double.Parse(forecast.Total.Amount) * exchange_rate).ToString("C", CultureInfo.CreateSpecificCulture("en-US"))} {exchange_currency}");
             }
 
             span?.Finish();
@@ -88,16 +85,23 @@ namespace CostTracker
 
             if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(token))
             {
-                using (var api = new HttpClient { BaseAddress = new Uri("https://api.pushover.net/1") })
+                using (var api = new HttpClient())
                 {
-                    var body = new StringContent(JsonSerializer.Serialize(new
+                    var body = new Dictionary<string, string>
                     {
-                        token, user, message,
-                        title = "AWS Usage & Forecast",
-                        url = "https://console.aws.amazon.com/cost-management/home"
-                    }), Encoding.UTF8, "application/json");
+                        ["token"] = token,
+                        ["user"] = user,
+                        ["message"] = message,
+                        ["title"] = "AWS Billing",
+                        ["url"] = "https://console.aws.amazon.com/cost-management/home"
+                    };
 
-                    api.PostAsync("/messages.json", body);
+                    var response = api.PostAsync("https://api.pushover.net/1/messages.json", new FormUrlEncodedContent(body)).GetAwaiter().GetResult();
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new ApplicationException($"Push notification failed. Error: {response.StatusCode}");
+                    }
                 }
             }
 

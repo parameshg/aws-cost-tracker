@@ -15,14 +15,14 @@ jobs:
       with:
         dotnet-version: 6.0.x
 
-    - name: Restore Dependencies
-      run: dotnet restore source/CostTracker.csproj
-
     - name: Build Codebase
-      run: dotnet build  source/CostTracker.csproj --no-restore
+      run: dotnet build source/CostTracker.csproj --configuration Release
 
     - name: Archive Binaries
-      run: zip -r aws-cost-tracker.zip .
+      run: |
+        cd source/bin/Release/net6.0
+        zip aws-cost-tracker.zip ./* -r
+        mv aws-cost-tracker.zip ../../../../aws-cost-tracker.zip
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
@@ -33,7 +33,7 @@ jobs:
         mask-aws-account-id: true
 
     - name: Upload Binaries
-      run: aws s3 cp CostTracker.zip s3://aspnetcore/aws-cost-tracker.zip
+      run: aws s3 cp aws-cost-tracker.zip s3://aspnetcore
 
     - name: Update Function
       run: aws lambda update-function-code --function-name aws-cost-tracker --s3-bucket aspnetcore --s3-key aws-cost-tracker.zip
