@@ -1,0 +1,39 @@
+name: update
+on:
+  push:
+    branches: [ "ci" ]
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Codebase
+      uses: actions/checkout@v3
+
+    - name: Setup Dotnet
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore Dependencies
+      run: dotnet restore source/CostTracker.csproj
+
+    - name: Build Codebase
+      run: dotnet build  source/CostTracker.csproj --no-restore
+
+    - name: Archive Binaries
+      run: zip -r aws-cost-tracker.zip .
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        mask-aws-account-id: true
+
+    - name: Upload Binaries
+      run: aws s3 cp CostTracker.zip s3://aspnetcore/aws-cost-tracker.zip
+
+    - name: Update Function
+      run: aws lambda update-function-code --function-name aws-cost-tracker --s3-bucket aspnetcore --s3-key aws-cost-tracker.zip

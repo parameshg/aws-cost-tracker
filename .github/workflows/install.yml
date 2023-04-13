@@ -1,0 +1,47 @@
+name: install
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Codebase
+      uses: actions/checkout@v3
+
+    - name: Setup Dotnet
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore Dependencies
+      run: dotnet restore source/CostTracker.csproj
+
+    - name: Build Codebase
+      run: dotnet build  source/CostTracker.csproj --no-restore
+
+    - name: Archive Binaries
+      run: zip -r aws-cost-tracker.zip .
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{secrets.AWS_REGION}}
+        aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+        aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+        mask-aws-account-id: true
+
+    - name: Upload Binaries
+      run: aws s3 cp CostTracker.zip s3://aspnetcore/aws-cost-tracker.zip
+
+    - name: Initialize Terraform
+      run: terraform init -backend-config="region=${{secrets.AWS_REGION}}" -backend-config="access_key=${{secrets.AWS_ACCESS_KEY_ID}}" -backend-config="secret_key=${{secrets.AWS_SECRET_ACCESS_KEY}}"
+
+    - name: Validate Terraform
+      run: terraform validate
+
+    - name: Plan Terraform
+      run: terraform plan -var "AWS_ACCOUNT=${{secrets.AWS_ACCOUNT}}" -var "AWS_REGION=${{secrets.AWS_REGION}}" -var "AWS_ACCESS_KEY_ID=${{secrets.AWS_ACCESS_KEY_ID}}" -var "AWS_SECRET_ACCESS_KEY=${{secrets.AWS_SECRET_ACCESS_KEY}}" -var "SENTRY_ENDPOINT=${{secrets.SENTRY_ENDPOINT}}"
+
+    - name: Apply Terraform
+      run: terraform apply -auto-approve -var "AWS_ACCOUNT=${{secrets.AWS_ACCOUNT}}" -var "AWS_REGION=${{secrets.AWS_REGION}}" -var "AWS_ACCESS_KEY_ID=${{secrets.AWS_ACCESS_KEY_ID}}" -var "AWS_SECRET_ACCESS_KEY=${{secrets.AWS_SECRET_ACCESS_KEY}}" -var "SENTRY_ENDPOINT=${{secrets.SENTRY_ENDPOINT}}"

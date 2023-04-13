@@ -1,0 +1,27 @@
+name: uninstall
+on:
+  workflow_dispatch:
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        mask-aws-account-id: true
+
+    - name: Delete Functions
+      run: aws lambda delete-function --function-name aws-cost-tracker
+      continue-on-error: true
+
+    - name: Delete Binaries
+      run: aws s3 rm s3://aspnetcore/aws-cost-tracker.zip
+      continue-on-error: true
+
+    - name: Delete Security Roles
+      run: aws iam delete-role --role-name aws-cost-tracker
+      continue-on-error: true

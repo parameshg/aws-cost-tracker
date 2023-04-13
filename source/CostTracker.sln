@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33103.184
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CostTracker", "CostTracker.csproj", "{FC2CB27A-1527-4E29-BEC9-9705C96F4A61}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{84706BF5-42BA-4539-A519-C4BAC5BBC18E}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\install.yml = ..\.github\workflows\install.yml
+		..\README.md = ..\README.md
+		..\serverless.tf = ..\serverless.tf
+		..\.github\workflows\uninstall.yml = ..\.github\workflows\uninstall.yml
+		..\.github\workflows\update.yml = ..\.github\workflows\update.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FC2CB27A-1527-4E29-BEC9-9705C96F4A61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC2CB27A-1527-4E29-BEC9-9705C96F4A61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC2CB27A-1527-4E29-BEC9-9705C96F4A61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC2CB27A-1527-4E29-BEC9-9705C96F4A61}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FA3256FF-994E-4100-8FC0-E6319F530DED}
+	EndGlobalSection
+EndGlobal
